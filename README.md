@@ -7,9 +7,11 @@ SQLAlchemy Challenge
 
 # Results
 
-TBA:
-- path1
-- path2
+Part 1: Analyse and Explore the Climate Data
+
+- The ***SurfsUp*** subfolder contains the following source code files:
+    - app.py
+    - climate.ipynb
 
 # Implementation notes
 
@@ -19,6 +21,5 @@ TBA
 
 The following references were used in the development of the solution for this Challenge.
 
-## Topic 1
-- reference 1
-
+## SQLAlchemy ORM
+- Class notes/sample files for 'Advanced Usage of the SQLAlchemy ORM', Monash University 'Data Analytics Boot Camp'
