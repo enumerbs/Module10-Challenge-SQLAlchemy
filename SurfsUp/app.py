@@ -1,11 +1,13 @@
 # Import the dependencies.
 import numpy as np
 import pandas as pd
+import datetime as dt
+from dateutil.relativedelta import relativedelta
 
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 
 from flask import Flask, jsonify
 
@@ -82,6 +84,40 @@ def stations():
 
     # Return result in JSON format
     return jsonify(stations)
+
+@app.route("/api/v1.0/tobs")
+def tobs():
+    """Return temperature observations of the most-active station for the previous year of data"""
+    # Determine the most active station
+    most_active_station_tuple = session.query(Station.station, func.count(Measurement.station))\
+        .join(Measurement, Station.station == Measurement.station)\
+        .group_by(Station.station)\
+        .order_by(func.count(Measurement.station).desc())\
+        .first()
+    
+    most_active_station_id = most_active_station_tuple[0]
+    
+    # Find the most recent observation date for this station
+    most_recent_date_str = session.query(func.max(Measurement.date))\
+        .filter(Measurement.station == most_active_station_id)\
+        .one()
+
+    # Convert to a date type and calculate the date one year earlier
+    last_date = dt.date.fromisoformat(most_recent_date_str[0])
+    one_year_before_last_date = last_date + relativedelta(years=-1)
+
+    # Define a query to retrieve the temperature observation data for this station
+    last12months_tobs_tuples = session.query(Measurement.tobs)\
+                                .filter(Measurement.date.between(one_year_before_last_date, last_date))\
+                                .filter(Measurement.station == most_active_station_id)\
+                                .all()
+    
+    # Convert list of tuples into normal list
+    last12months_tobs = list(np.ravel(last12months_tobs_tuples))
+
+    # Return result in JSON format
+    return jsonify(last12months_tobs)
+    
 
 #################################################
 # Database Cleanup
