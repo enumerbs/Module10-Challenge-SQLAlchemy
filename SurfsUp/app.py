@@ -53,11 +53,22 @@ def welcome():
         f"<p>/api/v1.0/&lt;start&gt;/&lt;end&gt;</p>"
     )
 
+#------------------------------------------------
+
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    """Return all precipitation measurements sorted by date"""
-    # Query all precipitation by date
-    precipitation_tuples = session.query(Measurement.date, Measurement.prcp).all()
+    """Return all precipitation measurements for the last year of data sorted by date"""
+    # Find the most recent measurement date in the data set.
+    most_recent_date_str = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+    last_date = dt.date.fromisoformat(most_recent_date_str[0])
+
+    # Calculate the date one year from the last date in data set.
+    one_year_before_last_date = last_date + relativedelta(years=-1)
+
+    # Query all precipitation for the last year of data
+    precipitation_tuples = session.query(Measurement.date, Measurement.prcp)\
+                            .filter(Measurement.date.between(one_year_before_last_date, last_date))\
+                            .all()
     
     # Convert tuples to dataframe taking on column names 'date' and 'prcp' from the query
     precipitation_df = pd.DataFrame(precipitation_tuples)
@@ -72,6 +83,8 @@ def precipitation():
     precipitation_dict = precipitation_df.to_dict(orient="records")
     return precipitation_dict
 
+#------------------------------------------------
+
 @app.route("/api/v1.0/stations")
 def stations():
     """Return a list of all measurement station identifiers sorted alphabetically"""
@@ -84,9 +97,11 @@ def stations():
     # Return result in JSON format
     return jsonify(stations)
 
+#------------------------------------------------
+
 @app.route("/api/v1.0/tobs")
 def tobs():
-    """Return temperature observations of the most-active station for the previous year of data"""
+    """Return temperature observations of the most-active station for the last year of data"""
     # Determine the most active station
     most_active_station_tuple = session.query(Station.station, func.count(Measurement.station))\
         .join(Measurement, Station.station == Measurement.station)\
@@ -117,6 +132,8 @@ def tobs():
     # Return result in JSON format
     return jsonify(last12months_tobs)
 
+#------------------------------------------------
+
 @app.route("/api/v1.0/<start>")
 def min_avg_max_temperatures_from(start):
     """Calculate MIN, AVG, and MAX temperature for all dates greater than or equal to the start date."""
@@ -140,6 +157,8 @@ def min_avg_max_temperatures_from(start):
 
         # Return result in JSON format
         return jsonify(tobs_statistics)
+    
+#------------------------------------------------
 
 @app.route("/api/v1.0/<start>/<end>")
 def min_avg_max_temperatures_from_to(start, end):
@@ -172,7 +191,8 @@ def min_avg_max_temperatures_from_to(start, end):
 #################################################
 session.close()
 
-#------------------------------------------------
+#################################################
 # Support for invocation from the command line
+#################################################
 if __name__ == "__main__":
     app.run(debug=True)
