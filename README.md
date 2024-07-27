@@ -7,11 +7,13 @@ SQLAlchemy Challenge
 
 # Results
 
-Part 1: Analyse and Explore the Climate Data
+The ***SurfsUp*** subfolder contains the following source code files
 
-- The ***SurfsUp*** subfolder contains the following source code files:
-    - app.py
-    - climate.ipynb
+Part 1: Analyse and Explore the Climate Data
+- climate.ipynb
+
+Part 2: Design Your Climate App
+- app.py
 
 # Implementation notes
 
