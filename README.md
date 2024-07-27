@@ -25,15 +25,26 @@ Precipitation Analysis
 
 The following references were used in the development of the solution for this Challenge.
 
-## SQLAlchemy ORM
-- Class notes/sample files for 'Advanced Usage of the SQLAlchemy ORM', Monash University 'Data Analytics Boot Camp'
-- Query for results between two dates
-    - https://www.slingacademy.com/article/sqlalchemy-select-rows-between-two-dates/#Selection_with_ORM
+## HTML Character Entities
 
-## Python - date conversion & calculations
-- Add 1 year to a date
-    - https://stackoverflow.com/questions/54394327/using-datetime-timedelta-to-add-years
+- Encoding for reserved characters in HTML
+    - https://www.w3schools.com/html/html_entities.asp
+
+## HTTP Response Status Codes
+- Client error responses
+    - https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#client_error_responses
 
 ## Pandas / Matplotlib - problems with x-axis Date values
 - Work-around for Date values shown with year as 1970
     - https://stackoverflow.com/questions/64919511/dateformatter-is-bringing-1970-as-year-not-the-original-year-in-the-dataset
+
+## Python - data conversion & calculations
+- Add 1 year to a date
+    - https://stackoverflow.com/questions/54394327/using-datetime-timedelta-to-add-years
+- Rounding values in a list
+    - https://stackoverflow.com/questions/5326112/how-to-round-each-item-in-a-list-of-floats-to-2-decimal-places
+
+## SQLAlchemy ORM
+- Class notes/sample files for 'Advanced Usage of the SQLAlchemy ORM', Monash University 'Data Analytics Boot Camp'
+- Query for results between two dates
+    - https://www.slingacademy.com/article/sqlalchemy-select-rows-between-two-dates/#Selection_with_ORM
