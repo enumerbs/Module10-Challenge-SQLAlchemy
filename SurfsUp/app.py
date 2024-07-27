@@ -44,14 +44,13 @@ app = Flask(__name__)
 def welcome():
     """List all available api routes."""
     return (
-        f"Welcome to the Hawaii Climate API!<br/>"
-        f"Available Routes:<br/>"
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end><br/>"
-
+        f"<h1>Welcome to the Hawaii Climate API!</h1>"
+        f"<h2>Available Routes:</h2>"
+        f"<p>/api/v1.0/precipitation</p>"
+        f"<p>/api/v1.0/stations</p>"
+        f"<p>/api/v1.0/tobs</p>"
+        f"<p>/api/v1.0/&lt;start&gt;</p>"
+        f"<p>/api/v1.0/&lt;start&gt;/&lt;end&gt;</p>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -117,7 +116,56 @@ def tobs():
 
     # Return result in JSON format
     return jsonify(last12months_tobs)
-    
+
+@app.route("/api/v1.0/<start>")
+def min_avg_max_temperatures_from(start):
+    """Calculate MIN, AVG, and MAX temperature for all dates greater than or equal to the start date."""
+    try:
+        # Convert the supplied start date from string to date type
+        start_date = dt.date.fromisoformat(start)
+    except:
+        # Date conversion error: return error description to the caller; set HTTP status code 400 'Bad request'
+        return {"error": f"Start date {start} is not in yyyy-mm-dd format"}, 400
+    else:
+        # Calculate the min/avg/max temperature statistics for observations from the given start date (inclusive)
+        tobs_statistics_tuple = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+                                .filter(Measurement.date >= start_date)\
+                                .all()
+  
+        # Convert result tuple into a normal list
+        tobs_statistics = list(np.ravel(tobs_statistics_tuple))
+        if tobs_statistics[0] != None:
+            # Round values to 2 decimal places
+            tobs_statistics = list(np.around(np.array(tobs_statistics),2))
+
+        # Return result in JSON format
+        return jsonify(tobs_statistics)
+
+@app.route("/api/v1.0/<start>/<end>")
+def min_avg_max_temperatures_from_to(start, end):
+    """calculate MIN, AVG, and MAX temperature for all dates from the start date to the end date, inclusive."""
+    try:
+        # Convert the supplied dates from string to date type
+        start_date = dt.date.fromisoformat(start)
+        end_date = dt.date.fromisoformat(end)
+    except:
+        # Date conversion error: return error description to the caller; set HTTP status code 400 'Bad request'
+        return {"error": f"Start date {start} and/or End date {end} is not in yyyy-mm-dd format"}, 400
+    else:
+        # Calculate the min/avg/max temperature statistics for observations from the given start date to end date (inclusive)
+        tobs_statistics_tuple = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs))\
+                                .filter(Measurement.date >= start_date)\
+                                .filter(Measurement.date <= end_date)\
+                                .all()
+  
+        # Convert result tuple into a normal list
+        tobs_statistics = list(np.ravel(tobs_statistics_tuple))
+        if tobs_statistics[0] != None:
+            # Round values to 2 decimal places
+            tobs_statistics = list(np.around(np.array(tobs_statistics),2))
+
+        # Return result in JSON format
+        return jsonify(tobs_statistics)
 
 #################################################
 # Database Cleanup
