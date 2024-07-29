@@ -29,7 +29,7 @@ Measurement = Base.classes.measurement
 Station = Base.classes.station
 
 # Create a session
-session = Session(bind=engine)
+# NOTE: moved Session handling from this outer scope to within each route handler (refer to Implementation Notes section of README.md for details)
 
 #################################################
 # Flask Setup
@@ -76,17 +76,21 @@ def welcome():
 @app.route("/api/v1.0/precipitation")
 def precipitation():
     """Return all precipitation measurements for the last year of data sorted by date"""
-    # Find the most recent measurement date in the data set.
+
+    session = Session(bind=engine)
+
+    # Find the most recent measurement date in the data set
     most_recent_date_str = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
     last_date = dt.date.fromisoformat(most_recent_date_str[0])
 
-    # Calculate the date one year from the last date in data set.
+    # Calculate the date one year from the last date in data set
     one_year_before_last_date = last_date + relativedelta(years=-1)
 
     # Query all precipitation for the last year of data
     precipitation_tuples = session.query(Measurement.date, Measurement.prcp)\
                             .filter(Measurement.date.between(one_year_before_last_date, last_date))\
                             .all()
+    session.close()
 
     # Convert tuples to dataframe taking on column names 'date' and 'prcp' from the query
     precipitation_df = pd.DataFrame(precipitation_tuples)
@@ -98,8 +102,7 @@ def precipitation():
     precipitation_df = precipitation_df.sort_values(by=["date"])
 
     # Convert to a dictionary and return result
-    precipitation_dict = precipitation_df.to_dict(orient="records")
-    return precipitation_dict
+    return precipitation_df.to_dict(orient="records")
 
 #------------------------------------------------
 
@@ -107,7 +110,9 @@ def precipitation():
 def stations():
     """Return a list of all measurement station identifiers sorted alphabetically"""
     # Query for station names
+    session = Session(bind=engine)
     station_tuples = session.query(Station.station).order_by(Station.station).all()
+    session.close()
 
     # Convert list of tuples into normal list
     stations = list(np.ravel(station_tuples))
@@ -120,6 +125,9 @@ def stations():
 @app.route("/api/v1.0/tobs")
 def tobs():
     """Return temperature observations of the most-active station for the last year of data"""
+
+    session = Session(bind=engine)
+
     # Determine the most active station
     most_active_station_tuple = session.query(Station.station, func.count(Measurement.station))\
         .join(Measurement, Station.station == Measurement.station)\
@@ -144,6 +152,8 @@ def tobs():
                                 .filter(Measurement.station == most_active_station_id)\
                                 .all()
 
+    session.close()
+
     # Convert list of tuples into normal list
     last12months_tobs = list(np.ravel(last12months_tobs_tuples))
 
@@ -163,17 +173,19 @@ def min_avg_max_temperatures_from(start):
         return {"error": f"Start date {start} is not a valid date in yyyy-mm-dd format"}, 400
     else:
         # Calculate the min/avg/max temperature statistics for observations from the given start date (inclusive)
+        session = Session(bind=engine)
         tobs_statistics_tuple = session.query(func.min(Measurement.tobs).label("TMIN"),\
                                               func.avg(Measurement.tobs).label("TAVG"),\
                                               func.max(Measurement.tobs).label("TMAX"))\
                                 .filter(Measurement.date >= start_date)\
                                 .all()
+        session.close()
 
         # Convert tuple to dataframe taking on column names from the query
         tobs_statistics_df = convert_min_avg_max_query_result_to_dataframe(tobs_statistics_tuple)
 
         # Return result in JSON format
-        return format_min_avg_max_temperatures_as_JSON(tobs_statistics_df)
+        return format_min_avg_max_temperatures_as_json(tobs_statistics_df)
 
 #------------------------------------------------
 
@@ -189,18 +201,20 @@ def min_avg_max_temperatures_from_to(start, end):
         return {"error": f"Start date {start} and/or End date {end} is not a valid date in yyyy-mm-dd format"}, 400
     else:
         # Calculate the min/avg/max temperature statistics for observations from the given start date to end date (inclusive)
+        session = Session(bind=engine)
         tobs_statistics_tuple = session.query(func.min(Measurement.tobs).label("TMIN"),\
                                               func.avg(Measurement.tobs).label("TAVG"),\
                                               func.max(Measurement.tobs).label("TMAX"))\
                                 .filter(Measurement.date >= start_date)\
                                 .filter(Measurement.date <= end_date)\
                                 .all()
+        session.close()
 
         # Convert tuple to dataframe taking on column names from the query
         tobs_statistics_df = convert_min_avg_max_query_result_to_dataframe(tobs_statistics_tuple)
 
         # Return result in JSON format
-        return format_min_avg_max_temperatures_as_JSON(tobs_statistics_df)
+        return format_min_avg_max_temperatures_as_json(tobs_statistics_df)
 
 #################################################
 # Utility functions
@@ -218,19 +232,14 @@ def convert_min_avg_max_query_result_to_dataframe(tobs_statistics_tuple):
 
 #------------------------------------------------
 
-def format_min_avg_max_temperatures_as_JSON (temperatures_df):
+def format_min_avg_max_temperatures_as_json (temperatures_df):
     # Return result in JSON format:
-    # - as labelled key:value pairs if the query string specified "dict"ionary mode, or
+    # - as labelled key:value pairs if the API endpoint's query string (if any) specified "dict"ionary mode, or
     # - as a list of three values (in MIN-AVG-MAX order) otherwise.
     if request.args.get("mode") == "dict":
         return temperatures_df.to_dict(orient="records")
     else:
         return jsonify(temperatures_df.iloc[0].to_list())
-
-#################################################
-# Database Session Cleanup
-#################################################
-session.close()
 
 #################################################
 # Support for invocation from the command line
