@@ -23,7 +23,7 @@ The ***SurfsUp*** subfolder contains the following source code files:
 
 **climate.ipynb** - Precipitation Analysis
  - Attempting to use Pandas' Dataframe plot() method to plot the bar chart resulted in the x-axis date values being displayed with year values of 1970. This appears to be some mis-match between Pandas' and matplotlib's datetime handling.
- - The workaround was to use matplotlib functions for both the bar plot and the associated axis ticks and labels. See the References section below for one example of a StackOverflow article on this subject.
+ - The workaround was to use matplotlib functions for both the bar plot and the associated axis ticks and labels. See the References section below for StackOverflow articles on this subject.
 
   **app.py** - SQLAlchemy / database Session management
   - It was mentioned in class / sample code examples that good practice is to create the Session, use it to query the required data from the database, and then close the Session immediately once it's no longer required in each route handler method (so as to minimise blocking access to the database from other potential user sessions).
@@ -71,6 +71,8 @@ The following references were used in the development of the solution for this C
 ## Pandas / Matplotlib - problems with x-axis Date values
 - Work-around for Date values shown with year as 1970
     - https://stackoverflow.com/questions/64919511/dateformatter-is-bringing-1970-as-year-not-the-original-year-in-the-dataset
+- Controlling x-axis labels in general, especially for bar charts with Date values on the x-axis
+    - https://stackoverflow.com/questions/30133280/pandas-bar-plot-changes-date-format
 
 ## Python - data conversion & calculations
 - Add 1 year to a date
